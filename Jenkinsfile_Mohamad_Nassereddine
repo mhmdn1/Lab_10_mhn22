@@ -4,7 +4,6 @@ pipeline {
         VIRTUAL_ENV = 'venv' // Virtual environment directory
         PYTHONIOENCODING = 'utf-8' // Setting the encoding to UTF-8
         DEPLOY_PATH = 'C:\\deploy\\myapplication' // Define the path for deployment
-        LOG_PATH = 'C:\\logs\\deployment_log.txt' // Define the path for the deployment log
     }
     stages {
         stage('Setup') {
@@ -41,18 +40,28 @@ pipeline {
         stage('Security Scan') {
             steps {
                 script {
-                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate and bandit -r . --quiet --exclude ./venv"
+                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate && bandit -r . --quiet --exclude ./venv"
                 }
             }
         }
         stage('Deploy') {
             steps {
                 script {
-                    // Deploy by updating the web server directory
-                    bat "if not exist ${env.DEPLOY_PATH} mkdir ${env.DEPLOY_PATH}"
-                    bat "if not exist ${env.LOG_PATH} mkdir ${env.LOG_PATH}"
-                    bat "robocopy ${env.WORKSPACE} ${env.DEPLOY_PATH} /MIR /XD venv /XF *.log /V /LOG:${env.LOG_PATH}"
-                    bat "echo Application successfully deployed to ${env.DEPLOY_PATH}"
+                    // PowerShell script for deployment
+                    powershell """
+                        \$ErrorActionPreference = 'Stop'  // Make the script stop on errors
+                        # Ensure the deployment directory exists
+                        if (!(Test-Path -Path '${env.DEPLOY_PATH}')) {
+                            New-Item -Path '${env.DEPLOY_PATH}' -ItemType Directory
+                        }
+                        # Copy files from workspace to deployment directory, excluding certain files
+                        Get-ChildItem -Path '${env.WORKSPACE}' -Recurse | Where-Object {
+                            \$_ -notmatch '\\\\.venv' -and \$_ -notmatch '\\\\*.log'
+                        } | Copy-Item -Destination {
+                            Join-Path '${env.DEPLOY_PATH}' \$_.FullName.Substring(\$_.PSParentPath.Length)
+                        } -Force
+                        Write-Output 'Application successfully deployed to ${env.DEPLOY_PATH}'
+                    """
                 }
             }
         }
@@ -63,7 +72,6 @@ pipeline {
         }
     }
 }
-
 
 
 
