@@ -1,10 +1,10 @@
-
 pipeline {
     agent any
     environment {
         VIRTUAL_ENV = 'venv' // Virtual environment directory
         PYTHONIOENCODING = 'utf-8' // Setting the encoding to UTF-8
         DEPLOY_PATH = 'C:\\deploy\\myapplication' // Define the path for deployment
+        LOG_PATH = 'C:\\logs\\deployment_log.txt' // Define the path for the deployment log
     }
     stages {
         stage('Setup') {
@@ -50,7 +50,8 @@ pipeline {
                 script {
                     // Deploy by updating the web server directory
                     bat "if not exist ${env.DEPLOY_PATH} mkdir ${env.DEPLOY_PATH}"
-                    bat "robocopy ${env.WORKSPACE} ${env.DEPLOY_PATH} /MIR /XD venv /XF *.log"
+                    bat "if not exist ${env.LOG_PATH} mkdir ${env.LOG_PATH}"
+                    bat "robocopy ${env.WORKSPACE} ${env.DEPLOY_PATH} /MIR /XD venv /XF *.log /V /LOG:${env.LOG_PATH}"
                     bat "echo Application successfully deployed to ${env.DEPLOY_PATH}"
                 }
             }
@@ -62,7 +63,6 @@ pipeline {
         }
     }
 }
-
 
 
 
