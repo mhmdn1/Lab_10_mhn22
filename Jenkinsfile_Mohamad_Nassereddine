@@ -1,51 +1,123 @@
+
 pipeline {
     agent any
     environment {
-        VIRTUAL_ENV = 'venv'
+        VIRTUAL_ENV = 'venv' // Virtual environment directory
+        PYTHONIOENCODING = 'utf-8' // Setting the encoding to UTF-8
+        DEPLOY_PATH = 'C:\\deploy\\myapplication' // Define the path for deployment
     }
     stages {
         stage('Setup') {
             steps {
                 script {
-                    // Check if the virtual environment directory does not exist and create it if needed
-                    if (!fileExists("${env.WORKSPACE}\\${VIRTUAL_ENV}")) {
-                        // Use the system's Python to create the virtual environment
-                        bat "python -m venv ${env.WORKSPACE}\\${VIRTUAL_ENV}"
+                    if (!fileExists("${env.WORKSPACE}\\${env.VIRTUAL_ENV}")) {
+                        bat "python -m venv ${env.WORKSPACE}\\${env.VIRTUAL_ENV}"
                     }
-                    // Activate the virtual environment and install dependencies
-                    bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pip install -r requirements.txt"
+                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate && pip install -r requirements.txt"
                 }
             }
         }
         stage('Lint') {
             steps {
                 script {
-                    // Run flake8 to check for style issues in app.py
-                    bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && flake8 app.py"
+                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate && flake8 app.py"
                 }
             }
         }
         stage('Test') {
             steps {
                 script {
-                    // Run tests using pytest
-                    bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pytest"
+                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate && pytest"
+                }
+            }
+        }
+        stage('Coverage') {
+            steps {
+                script {
+                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate && coverage run -m pytest && coverage report"
+                }
+            }
+        }
+        stage('Security Scan') {
+            steps {
+                script {
+                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate and bandit -r . --quiet --exclude ./venv"
                 }
             }
         }
         stage('Deploy') {
             steps {
                 script {
-                    // Add your Windows-compatible deployment logic here
-                    echo "Deploying application..."
+                    // Deploy by updating the web server directory
+                    bat "if not exist ${env.DEPLOY_PATH} mkdir ${env.DEPLOY_PATH}"
+                    bat "robocopy ${env.WORKSPACE} ${env.DEPLOY_PATH} /MIR /XD venv /XF *.log"
+                    bat "echo Application successfully deployed to ${env.DEPLOY_PATH}"
                 }
             }
         }
     }
     post {
         always {
-            // Clean up the workspace after the pipeline is done
             cleanWs()
         }
     }
 }
+
+
+
+
+
+
+
+// PART 3
+// pipeline {
+//     agent any
+//     environment {
+//         VIRTUAL_ENV = 'venv'
+//     }
+//     stages {
+//         stage('Setup') {
+//             steps {
+//                 script {
+//                     // Check if the virtual environment directory does not exist and create it if needed
+//                     if (!fileExists("${env.WORKSPACE}\\${VIRTUAL_ENV}")) {
+//                         // Use the system's Python to create the virtual environment
+//                         bat "python -m venv ${env.WORKSPACE}\\${VIRTUAL_ENV}"
+//                     }
+//                     // Activate the virtual environment and install dependencies
+//                     bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pip install -r requirements.txt"
+//                 }
+//             }
+//         }
+//         stage('Lint') {
+//             steps {
+//                 script {
+//                     // Run flake8 to check for style issues in app.py
+//                     bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && flake8 app.py"
+//                 }
+//             }
+//         }
+//         stage('Test') {
+//             steps {
+//                 script {
+//                     // Run tests using pytest
+//                     bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pytest"
+//                 }
+//             }
+//         }
+//         stage('Deploy') {
+//             steps {
+//                 script {
+//                     // Add your Windows-compatible deployment logic here
+//                     echo "Deploying application..."
+//                 }
+//             }
+//         }
+//     }
+//     post {
+//         always {
+//             // Clean up the workspace after the pipeline is done
+//             cleanWs()
+//         }
+//     }
+// }
