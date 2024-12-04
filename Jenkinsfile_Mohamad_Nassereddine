@@ -10,21 +10,28 @@ pipeline {
                     if (!fileExists("${env.WORKSPACE}\\${VIRTUAL_ENV}")) {
                         bat "python -m venv ${env.WORKSPACE}\\${VIRTUAL_ENV}"
                     }
-                    bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pip install -r requirements.txt"
+                    // Ensure you are in the right directory
+                    dir("${env.WORKSPACE}") {
+                        bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pip install -r requirements.txt"
+                    }
                 }
             }
         }
         stage('Lint') {
             steps {
                 script {
-                    bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && flake8 app.py"
+                    dir("${env.WORKSPACE}") {
+                        bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && flake8 app.py"
+                    }
                 }
             }
         }
         stage('Test') {
             steps {
                 script {
-                    bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pytest"
+                    dir("${env.WORKSPACE}") {
+                        bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pytest"
+                    }
                 }
             }
         }
