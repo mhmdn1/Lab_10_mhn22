@@ -26,30 +26,30 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate && pytest"
+                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate and pytest"
                 }
             }
         }
         stage('Coverage') {
             steps {
                 script {
-                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate && coverage run -m pytest && coverage report"
+                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate and coverage run -m pytest && coverage report"
                 }
             }
         }
         stage('Security Scan') {
             steps {
                 script {
-                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate && bandit -r . --quiet --exclude ./venv"
+                    bat "call ${env.WORKSPACE}\\${env.VIRTUAL_ENV}\\Scripts\\activate and bandit -r . --quiet --exclude ./venv"
                 }
             }
         }
         stage('Deploy') {
             steps {
                 script {
-                    // PowerShell script for deployment
+                    // Using PowerShell to manage the deployment process
                     powershell """
-                        \$ErrorActionPreference = 'Stop'  // Make the script stop on errors
+                        \$ErrorActionPreference = 'Stop'  # Make the script stop on errors
                         # Ensure the deployment directory exists
                         if (!(Test-Path -Path '${env.DEPLOY_PATH}')) {
                             New-Item -Path '${env.DEPLOY_PATH}' -ItemType Directory
@@ -58,7 +58,7 @@ pipeline {
                         Get-ChildItem -Path '${env.WORKSPACE}' -Recurse | Where-Object {
                             \$_ -notmatch '\\\\.venv' -and \$_ -notmatch '\\\\*.log'
                         } | Copy-Item -Destination {
-                            Join-Path '${env.DEPLOY_PATH}' \$_.FullName.Substring(\$_.PSParentPath.Length)
+                            Join-Path '${env.DEPLOY_PATH}' \$_ -replace '${env.WORKSPACE}', ''
                         } -Force
                         Write-Output 'Application successfully deployed to ${env.DEPLOY_PATH}'
                     """
@@ -68,7 +68,7 @@ pipeline {
     }
     post {
         always {
-            cleanWs()
+            cleanWs()  
         }
     }
 }
