@@ -7,37 +7,36 @@ pipeline {
         stage('Setup') {
             steps {
                 script {
+                    // Check if the virtual environment directory does not exist and create it if needed
                     if (!fileExists("${env.WORKSPACE}\\${VIRTUAL_ENV}")) {
+                        // Use the system's Python to create the virtual environment
                         bat "python -m venv ${env.WORKSPACE}\\${VIRTUAL_ENV}"
                     }
-                    // Ensure you are in the right directory
-                    dir("${env.WORKSPACE}") {
-                        bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pip install -r requirements.txt"
-                    }
+                    // Activate the virtual environment and install dependencies
+                    bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pip install -r requirements.txt"
                 }
             }
         }
         stage('Lint') {
             steps {
                 script {
-                    dir("${env.WORKSPACE}") {
-                        bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && flake8 app.py"
-                    }
+                    // Run flake8 to check for style issues in app.py
+                    bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && flake8 app.py"
                 }
             }
         }
         stage('Test') {
             steps {
                 script {
-                    dir("${env.WORKSPACE}") {
-                        bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pytest"
-                    }
+                    // Run tests using pytest
+                    bat "call ${env.WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\activate && pytest"
                 }
             }
         }
         stage('Deploy') {
             steps {
                 script {
+                    // Add your Windows-compatible deployment logic here
                     echo "Deploying application..."
                 }
             }
@@ -45,6 +44,7 @@ pipeline {
     }
     post {
         always {
+            // Clean up the workspace after the pipeline is done
             cleanWs()
         }
     }
